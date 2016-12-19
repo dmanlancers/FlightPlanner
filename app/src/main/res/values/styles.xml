@@ -16,6 +16,7 @@
 
     <style name="DialogWidgetTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="colorAccent">@color/colorPrimary</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:textColorPrimary">@android:color/black</item>
     </style>
 

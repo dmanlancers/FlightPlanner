@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Process;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -16,15 +17,54 @@ import android.support.v7.widget.AppCompatEditText;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.AppCompatTextView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.sun.mail.imap.IMAPFolder;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+
+import javax.mail.Address;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Store;
+import javax.mail.internet.InternetAddress;
+import javax.net.SocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 import dmanlancers.com.flightplanner.R;
 import dmanlancers.com.flightplanner.activities.FlightPlanActivity;
@@ -52,6 +92,7 @@ public class FlightPlannerFragment extends BaseFragment implements AdapterView.O
     private String mSubjectEmail;
     private LinearLayout mFlightPlanLayout;
     private Toolbar mToolbar;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     public FlightPlannerFragment() {
         realmManager = new RealmManager();
@@ -61,10 +102,11 @@ public class FlightPlannerFragment extends BaseFragment implements AdapterView.O
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         mActivity = (FlightPlanActivity) getActivity();
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(mActivity);
         return inflater.inflate(R.layout.fragment_flight_planner, container, false);
     }
 
-    @Override
+   @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mCurrentDate = (AppCompatTextView) view.findViewById(R.id.date);
@@ -140,6 +182,11 @@ public class FlightPlannerFragment extends BaseFragment implements AdapterView.O
                 mMessageTypeSelectedValue = adapterView.getItemAtPosition(pos).toString();
                 selectDestinationEmail(pos);
                 emailSubject(pos);
+
+                Bundle bundle = new Bundle();
+                bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, mMessageTypeSelectedValue);
+                mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
                 break;
         }
     }
@@ -165,26 +212,24 @@ public class FlightPlannerFragment extends BaseFragment implements AdapterView.O
 
     @Override
     public void onClick(View view) {
-
-        if (!Utils.haveNetworkConnection(mActivity)) {
-
-            Utils.showDialog(mActivity, getString(R.string.no_internet), "", getString(R.string.no_intenet_message), getString(R.string.exit), getString(R.string.settings), new AlertDialog.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    switch (i) {
-                        case DialogInterface.BUTTON_NEGATIVE:
-                            dialogInterface.dismiss();
-                            break;
-                        case DialogInterface.BUTTON_POSITIVE:
-                            startActivity(new Intent(Settings.ACTION_SETTINGS));
-                            break;
-                    }
-                }
-            });
-        }
-
         switch (view.getId()) {
             case R.id.send_email:
+                if (!Utils.haveNetworkConnection(mActivity)) {
+                    Utils.showDialog(mActivity, getString(R.string.no_internet), "", getString(R.string.no_intenet_message), getString(R.string.exit), getString(R.string.settings), new AlertDialog.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            switch (i) {
+                                case DialogInterface.BUTTON_NEGATIVE:
+                                    dialogInterface.dismiss();
+                                    break;
+                                case DialogInterface.BUTTON_POSITIVE:
+                                    startActivity(new Intent(Settings.ACTION_SETTINGS));
+                                    break;
+                            }
+                        }
+                    });
+                }
+
                 if (Utils.matchFlightCodePattern(mFlightCode)) {
                     if (!Utils.validateAirportCode(mOriginAirport, mDestinationAirport)) {
                         Utils.showDialog(mActivity, mActivity.getString(R.string.email_confirmation),
@@ -259,4 +304,76 @@ public class FlightPlannerFragment extends BaseFragment implements AdapterView.O
             mActivity.getSupportActionBar().setTitle(R.string.flight_planner);
         }
     }
+
+    public static class DummyTrustManager implements X509TrustManager {
+
+        public void checkClientTrusted(X509Certificate[] cert, String authType) {
+            // everything is trusted
+        }
+
+        public void checkServerTrusted(X509Certificate[] cert, String authType) {
+            // everything is trusted
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+
+    public static class DummySSLSocketFactory extends SSLSocketFactory {
+        private SSLSocketFactory factory;
+
+        public DummySSLSocketFactory() {
+            try {
+                SSLContext sslcontext = SSLContext.getInstance("TLS");
+                sslcontext.init(null,
+                        new TrustManager[] { new DummyTrustManager()},
+                        null);
+                factory = (SSLSocketFactory)sslcontext.getSocketFactory();
+            } catch(Exception ex) {
+                // ignore
+            }
+        }
+
+        public static SocketFactory getDefault() {
+            return new DummySSLSocketFactory();
+        }
+
+        public Socket createSocket() throws IOException {
+            return factory.createSocket();
+        }
+
+        public Socket createSocket(Socket socket, String s, int i, boolean flag)
+                throws IOException {
+            return factory.createSocket(socket, s, i, flag);
+        }
+
+        public Socket createSocket(InetAddress inaddr, int i,
+                                   InetAddress inaddr1, int j) throws IOException {
+            return factory.createSocket(inaddr, i, inaddr1, j);
+        }
+
+        public Socket createSocket(InetAddress inaddr, int i)
+                throws IOException {
+            return factory.createSocket(inaddr, i);
+        }
+
+        public Socket createSocket(String s, int i, InetAddress inaddr, int j)
+                throws IOException {
+            return factory.createSocket(s, i, inaddr, j);
+        }
+
+        public Socket createSocket(String s, int i) throws IOException {
+            return factory.createSocket(s, i);
+        }
+
+        public String[] getDefaultCipherSuites() {
+            return factory.getDefaultCipherSuites();
+        }
+
+        public String[] getSupportedCipherSuites() {
+            return factory.getSupportedCipherSuites();
+        }
+    }
+
 }

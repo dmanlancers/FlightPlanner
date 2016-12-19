@@ -1,35 +1,27 @@
 {
   "project_info": {
-    "project_number": "944557704922",
-    "firebase_url": "https://flightplanner-9d0ab.firebaseio.com",
-    "project_id": "flightplanner-9d0ab",
-    "storage_bucket": "flightplanner-9d0ab.appspot.com"
+    "project_number": "523679985025",
+    "firebase_url": "https://flightplanner-17750.firebaseio.com",
+    "project_id": "flightplanner-17750",
+    "storage_bucket": "flightplanner-17750.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:944557704922:android:c8314cf69376ccf7",
+        "mobilesdk_app_id": "1:523679985025:android:c8314cf69376ccf7",
         "android_client_info": {
           "package_name": "dmanlancers.com.flightplanner"
         }
       },
       "oauth_client": [
         {
-          "client_id": "944557704922-r17eqk76v3pttbapdsgfh9kvqm2570tv.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "dmanlancers.com.flightplanner",
-            "certificate_hash": "C5B1EC696634BC596708FDA15114CB4347BFCB5F"
-          }
-        },
-        {
-          "client_id": "944557704922-vkjoam5gqj13hf5h360el6tcs7rr4po0.apps.googleusercontent.com",
+          "client_id": "523679985025-t077r04hcrlquo5sakfqbnncej4qbv0b.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAj0lnaGSeQxIFj1a1MhTYiLZi6RbZcXFU"
+          "current_key": "AIzaSyDI1AgJfMmo9_hFMsJ4-UiIJxydkV87hAA"
         }
       ],
       "services": {
@@ -37,13 +29,8 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 2,
-          "other_platform_oauth_client": [
-            {
-              "client_id": "944557704922-vkjoam5gqj13hf5h360el6tcs7rr4po0.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "status": 1,
+          "other_platform_oauth_client": []
         },
         "ads_service": {
           "status": 2

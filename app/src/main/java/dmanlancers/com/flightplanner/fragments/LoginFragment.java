@@ -13,9 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import dmanlancers.com.flightplanner.R;
 import dmanlancers.com.flightplanner.activities.FlightPlanActivity;
 import dmanlancers.com.flightplanner.activities.LoginActivity;
@@ -30,7 +27,6 @@ public class LoginFragment extends BaseFragment implements View.OnClickListener,
     private AppCompatEditText inputEmail, inputPassword;
     private TextInputLayout usernameWrapper, passwordWrapper;
     private LinearLayout loginLayout;
-    private FirebaseAnalytics mFirebaseAnalytics;
     private Toolbar mToolbar;
 
     public LoginFragment() {
@@ -41,7 +37,6 @@ public class LoginFragment extends BaseFragment implements View.OnClickListener,
     public View onCreateView(LayoutInflater inflater, ViewGroup parentViewGroup, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_login, parentViewGroup, false);
         mActivity = (LoginActivity) getActivity();
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(mActivity);
         return view;
     }
 
@@ -112,10 +107,6 @@ public class LoginFragment extends BaseFragment implements View.OnClickListener,
                 if (c.getEmail().equals(user) && c.getPassword().equals(password)) {
 
                     Utils.putSharedPrefs(mActivity, "username", user);
-
-                    Bundle bundle = new Bundle();
-                    bundle.putString(FirebaseAnalytics.Param.VALUE, user);
-                    mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
 
                     Intent i = new Intent(mActivity, FlightPlanActivity.class);
                     i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
